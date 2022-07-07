@@ -50,7 +50,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> StructureAsync()
+        public System.Threading.Tasks.Task<LoadCloudStructure> LoadStructureAsync()
         {
             return StructureAsync(System.Threading.CancellationToken.None);
         }
@@ -240,7 +240,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FolderAsync(RenameFolderRequest body)
+        public System.Threading.Tasks.Task<LoadCloudStructure> RenameFolderAsync(RenameFolderRequest body)
         {
             return FolderAsync(body, System.Threading.CancellationToken.None);
         }
@@ -327,7 +327,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FileAsync(RenameFileRequest body)
+        public System.Threading.Tasks.Task<LoadCloudStructure> RenameFileAsync(RenameFileRequest body)
         {
             return FileAsync(body, System.Threading.CancellationToken.None);
         }
@@ -418,7 +418,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FolderAsync(DeleteFolderRequest body)
+        public System.Threading.Tasks.Task<LoadCloudStructure> DeleteFolderAsync(DeleteFolderRequest body)
         {
             return FolderAsync(body, System.Threading.CancellationToken.None);
         }
@@ -505,7 +505,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FileAsync(DeleteFileRequest body)
+        public System.Threading.Tasks.Task<LoadCloudStructure> DeleteFileAsync(DeleteFileRequest body)
         {
             return FileAsync(body, System.Threading.CancellationToken.None);
         }
@@ -596,7 +596,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FolderAsync(CreateFolderRequest body)
+        public System.Threading.Tasks.Task<LoadCloudStructure> CreateFolderAsync(CreateFolderRequest body)
         {
             return FolderAsync(body, System.Threading.CancellationToken.None);
         }
@@ -683,7 +683,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<LoadCloudStructure> FileAsync(string folderPath, string fileName, FileParameter file)
+        public System.Threading.Tasks.Task<LoadCloudStructure> UploadFileAsync(string folderPath, string fileName, FileParameter file)
         {
             return FileAsync(folderPath, fileName, file, System.Threading.CancellationToken.None);
         }
@@ -797,7 +797,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task FileAsync(DownloadFileRequest body)
+        public System.Threading.Tasks.Task DonwloadFileAsync(DownloadFileRequest body)
         {
             return FileAsync(body, System.Threading.CancellationToken.None);
         }
@@ -877,184 +877,12 @@ namespace RESTAPI
         }
     }
     
-
     public partial class CloudApi 
     {
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<string> UploadAsync(string folderPath, string fileName, FileParameter file)
-        {
-            return UploadAsync(folderPath, fileName, file, System.Threading.CancellationToken.None);
-        }
-    
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Success</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task<string> UploadAsync(string folderPath, string fileName, FileParameter file, System.Threading.CancellationToken cancellationToken)
-        {
-            var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/cloud/test_upload");
-    
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    var boundary_ = System.Guid.NewGuid().ToString();
-                    var content_ = new System.Net.Http.MultipartFormDataContent(boundary_);
-                    content_.Headers.Remove("Content-Type");
-                    content_.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary_);
-                    if (folderPath == null)
-                        throw new System.ArgumentNullException("folderPath");
-                    else
-                    {
-                        content_.Add(new System.Net.Http.StringContent(ConvertToString(folderPath, System.Globalization.CultureInfo.InvariantCulture)), "folderPath");
-                    }
-                    if (fileName == null)
-                        throw new System.ArgumentNullException("fileName");
-                    else
-                    {
-                        content_.Add(new System.Net.Http.StringContent(ConvertToString(fileName, System.Globalization.CultureInfo.InvariantCulture)), "fileName");
-                    }
-                    if (file == null)
-                        throw new System.ArgumentNullException("file");
-                    else
-                    {
-                        var content_file_ = new System.Net.Http.StreamContent(file.Data);
-                        if (!string.IsNullOrEmpty(file.ContentType))
-                            content_file_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(file.ContentType);
-                        content_.Add(content_file_, "File", file.FileName ?? "File");
-                    }
-                    request_.Content = content_;
-                    request_.Method = new System.Net.Http.HttpMethod("POST");
-                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
-    
-                    PrepareRequest(client_, request_, urlBuilder_);
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-                    PrepareRequest(client_, request_, url_);
-    
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-    
-                        ProcessResponse(client_, response_);
-    
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            var objectResponse_ = await ReadObjectResponseAsync<string>(response_, headers_).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            return objectResponse_.Object;
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false); 
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-    
-        /// <returns>Success</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task DownloadAsync(DownloadTestFileRequest body)
-        {
-            return DownloadAsync(body, System.Threading.CancellationToken.None);
-        }
-    
-        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Success</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task DownloadAsync(DownloadTestFileRequest body, System.Threading.CancellationToken cancellationToken)
-        {
-            var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/cloud/test_download");
-    
-            var client_ = _httpClient;
-            var disposeClient_ = false;
-            try
-            {
-                using (var request_ = new System.Net.Http.HttpRequestMessage())
-                {
-                    var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
-                    request_.Content = content_;
-                    request_.Method = new System.Net.Http.HttpMethod("POST");
-    
-                    PrepareRequest(client_, request_, urlBuilder_);
-                    var url_ = urlBuilder_.ToString();
-                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
-                    PrepareRequest(client_, request_, url_);
-    
-                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-                    var disposeResponse_ = true;
-                    try
-                    {
-                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
-                        if (response_.Content != null && response_.Content.Headers != null)
-                        {
-                            foreach (var item_ in response_.Content.Headers)
-                                headers_[item_.Key] = item_.Value;
-                        }
-    
-                        ProcessResponse(client_, response_);
-    
-                        var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
-                        {
-                            return;
-                        }
-                        else
-                        {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false); 
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
-                        }
-                    }
-                    finally
-                    {
-                        if (disposeResponse_)
-                            response_.Dispose();
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeClient_)
-                    client_.Dispose();
-            }
-        }
-    }
-    
-    public partial class CloudApi 
-    {
-    
-        /// <returns>Success</returns>
-        /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task<string> HiAsync()
+        public System.Threading.Tasks.Task<string> HiTestAsync()
         {
             return HiAsync(System.Threading.CancellationToken.None);
         }
@@ -1200,7 +1028,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task UserAsync(CreateAccountRequest body)
+        public System.Threading.Tasks.Task CreateUserAsync(CreateAccountRequest body)
         {
             return UserAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1273,7 +1101,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task LoginAsync(LoginByDeviceRequest body)
+        public System.Threading.Tasks.Task DeviceLoginAsync(LoginByDeviceRequest body)
         {
             return LoginAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1346,7 +1174,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task DeviceAsync(TrustDeviceRequest body)
+        public System.Threading.Tasks.Task AddTrustedDeviceAsync(TrustDeviceRequest body)
         {
             return DeviceAsync(body, System.Threading.CancellationToken.None);
         }
