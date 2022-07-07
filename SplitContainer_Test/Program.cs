@@ -13,9 +13,21 @@ namespace SplitContainer_Test
         [STAThread]
         static void Main()
         {
+            RESTAPI.CloudApi api = new RESTAPI.CloudApi("https://localhost:7193/", new System.Net.Http.HttpClient());
+
+
+            Console.WriteLine(api.HiAsync().GetAwaiter().GetResult());
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
             Application.Run(new CloudExplorer());
+
+
+
         }
+
+
+
     }
 }
