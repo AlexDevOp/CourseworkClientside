@@ -10,6 +10,17 @@ namespace SplitContainer_Test
     {
         public static FileSystemStructureFolder rootFolder;
 
+        public static FileSystemStructureFolder CreateTestRootFolder()
+        {
+            rootFolder = new FileSystemStructureFolder();
+            rootFolder.Folders.Add(new FileSystemStructureFolder { FolderName = "TestFolder1"});
+            rootFolder.Folders.Add(new FileSystemStructureFolder { FolderName = "TestFolder2"});
+            rootFolder.Files.Add(new FileSystemStructureFile { FileName = "TestFile1"});
+            rootFolder.Files.Add(new FileSystemStructureFile { FileName = "TestFile2"});
+            return rootFolder;
+
+        }
+
         public static FileSystemStructureFolder GetFolderByPath(string folderPath)
         {
             FileSystemStructureFolder currentFolder = rootFolder;
@@ -31,6 +42,7 @@ namespace SplitContainer_Test
         {
             foreach (var file in folder.Files)
             {
+
                 Console.WriteLine(file.FileName);
             }
 

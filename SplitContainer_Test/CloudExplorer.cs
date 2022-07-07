@@ -107,7 +107,6 @@ namespace SplitContainer_Test
 
         private void FillFolderView(string path)
         {
-            
             string[] allPaths = Directory.GetDirectories(path);
             ListViewItem lw;
             foreach (string localPath in allPaths)
@@ -135,6 +134,30 @@ namespace SplitContainer_Test
                 FolderItemsView.Items.Add(lw);
             }
         }
+
+
+        private void FillCloudFolderView(FileSystemStructureFolder path)
+        {
+            FileSystemStructureFolder folder = path;
+            ListViewItem lw;
+            foreach(FileSystemStructureFolder f in folder.Folders)
+            {
+                lw = new ListViewItem(new string[] { f.FolderName.Substring(f.FolderName.LastIndexOf('\\') + 1), "Папка", "", f.FolderEditTime.ToString() }, 0);
+                lw.Name = f.FolderName;
+                lw.Tag = false;
+                FolderItemsView.Items.Add(lw);
+            }
+
+
+            foreach (FileSystemStructureFile localPath in folder.Files)
+            {
+                lw = new ListViewItem(new string[] { localPath.FileName.Substring(localPath.FileName.LastIndexOf('\\') + 1), "Файл", GetFileLenghtString(localPath.FileLenght), localPath.FileEditTime.ToString() }, 1);
+                lw.Name = localPath.FileName;
+                lw.Tag = true;
+                FolderItemsView.Items.Add(lw);
+            }
+        }
+
 
         private string GetFileLenghtString(long fileLenght)
         {
@@ -191,7 +214,7 @@ namespace SplitContainer_Test
             //заполнение ListView
             try
             {
-                FillFolderView(currListViewAdress);
+                FillCloudFolderView(FileSystemStructureWorker.CreateTestRootFolder());
             }
             catch { }
 
