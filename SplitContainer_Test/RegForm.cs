@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace SplitContainer_Test
+namespace CloudProjectClient
 {
     public partial class RegForm : Form
     {
@@ -19,21 +19,24 @@ namespace SplitContainer_Test
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string username;
-            string fio;
-            string password;
+            string username = textBox2.Text;
+            string fio = textBox1.Text;
+            string password = textBox3.Text;
 
-            fio = textBox1.Text;
-            username = textBox2.Text;
-            password = textBox3.Text;
-            if (false)
+
+            var answer = GlobalScope.ApiController.CreateUserAsync(new RESTAPI.CreateAccountRequest { UserName = fio, Login = username, PassFingerprint = Convert.ToBase64String(GlobalScope.GetHashSha3(password)) }).GetAwaiter().GetResult();
+
+            if (!answer.Status)
             {
-                DialogResult = DialogResult.OK;
+                MessageBox.Show("Ошибка создания нового пользователя");
+                return;
             }
-            else
-            {
-                MessageBox.Show("Регистрация провалилась, Милорд!");
-            }
+
+            GlobalScope.UserToken = Convert.FromBase64String(answer.token);
+            GlobalScope.UserName = answer.userName;
+
+
+            DialogResult = DialogResult.OK;
         }
     }
 }

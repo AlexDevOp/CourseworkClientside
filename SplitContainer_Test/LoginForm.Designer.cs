@@ -1,4 +1,4 @@
-﻿namespace SplitContainer_Test
+﻿namespace CloudProjectClient
 {
     partial class LoginForm
     {
@@ -49,7 +49,7 @@
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("Comic Sans MS", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.Location = new System.Drawing.Point(70, 185);
+            this.button1.Location = new System.Drawing.Point(69, 159);
             this.button1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(180, 27);
@@ -64,7 +64,7 @@
             this.TB_password.Location = new System.Drawing.Point(70, 96);
             this.TB_password.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.TB_password.Name = "TB_password";
-            this.TB_password.PasswordChar = '?';
+            this.TB_password.PasswordChar = '*';
             this.TB_password.Size = new System.Drawing.Size(179, 23);
             this.TB_password.TabIndex = 2;
             // 
@@ -105,7 +105,7 @@
             // button2
             // 
             this.button2.Font = new System.Drawing.Font("Comic Sans MS", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button2.Location = new System.Drawing.Point(70, 153);
+            this.button2.Location = new System.Drawing.Point(69, 192);
             this.button2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(180, 27);

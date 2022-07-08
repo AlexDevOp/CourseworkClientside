@@ -8,8 +8,8 @@
     <ProjectGuid>{A1327CFE-E275-4800-BD26-539292AFB966}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SplitContainer_Test</RootNamespace>
-    <AssemblyName>SplitContainer_Test</AssemblyName>
+    <RootNamespace>CloudProjectClient</RootNamespace>
+    <AssemblyName>CloudProjectClient</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -25,8 +25,9 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <WarningLevel>0</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -39,8 +40,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HashLib, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\HashLib.2.0.1\lib\net40\HashLib.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.9.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
@@ -99,9 +100,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EnterNameForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EnterNameForm.Designer.cs">
+      <DependentUpon>EnterNameForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GlobalScope.cs" />
     <Compile Include="FileSystemStructure.cs" />
     <Compile Include="ListViewColumnSorter.cs" />
-    <Compile Include="FileSynData.cs" />
     <Compile Include="CloudExplorer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -114,6 +121,7 @@
     <Compile Include="LoginForm.Designer.cs">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="OpenAPIs\ResponsesStructures.cs" />
     <Compile Include="OpenAPIs\swagger.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -126,11 +134,14 @@
     <EmbeddedResource Include="CloudExplorer.resx">
       <DependentUpon>CloudExplorer.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="EnterNameForm.resx">
+      <DependentUpon>EnterNameForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="LoginForm.resx">
       <DependentUpon>LoginForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>

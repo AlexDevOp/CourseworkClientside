@@ -1,4 +1,4 @@
-﻿namespace SplitContainer_Test
+﻿namespace CloudProjectClient
 {
     partial class RegForm
     {
@@ -58,7 +58,7 @@
             this.textBox3.Location = new System.Drawing.Point(89, 132);
             this.textBox3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.textBox3.Name = "textBox3";
-            this.textBox3.PasswordChar = '?';
+            this.textBox3.PasswordChar = '*';
             this.textBox3.Size = new System.Drawing.Size(116, 23);
             this.textBox3.TabIndex = 2;
             // 

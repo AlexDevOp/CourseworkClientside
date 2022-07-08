@@ -1,31 +1,33 @@
-﻿using System;
+﻿using RESTAPI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SplitContainer_Test
+namespace CloudProjectClient
 {
     public class FileSystemStructureWorker
     {
-        public static FileSystemStructureFolder rootFolder;
 
-        public static FileSystemStructureFolder CreateTestRootFolder()
+        public static FileSystemStructureFolder GetFolderByPath(string folderPath = "")
         {
-            rootFolder = new FileSystemStructureFolder();
-            rootFolder.Folders.Add(new FileSystemStructureFolder { FolderName = "TestFolder1"});
-            rootFolder.Folders.Add(new FileSystemStructureFolder { FolderName = "TestFolder2"});
-            rootFolder.Files.Add(new FileSystemStructureFile { FileName = "TestFile1"});
-            rootFolder.Files.Add(new FileSystemStructureFile { FileName = "TestFile2"});
-            return rootFolder;
+            FileSystemStructureFolder currentFolder = GlobalScope.rootFolder;
 
-        }
+            if (folderPath.Length > 0 && folderPath[0] == '\\')
+            {
+                folderPath = folderPath.Remove(0, 1);
+            }
 
-        public static FileSystemStructureFolder GetFolderByPath(string folderPath)
-        {
-            FileSystemStructureFolder currentFolder = rootFolder;
+            if (folderPath.Length == 0)
+            {
+                return currentFolder;
+            }
 
             var foldersPaths = folderPath.Split('\\');
+
+            if (foldersPaths.Length == 0)
+                return currentFolder;
 
             foreach (var folderpath in foldersPaths)
             {
@@ -54,6 +56,7 @@ namespace SplitContainer_Test
         }
     }
 
+    /*
     public class FileSystemStructureFolder
     {
         public string FolderName { get; set; } = String.Empty;
@@ -73,4 +76,5 @@ namespace SplitContainer_Test
         public long FileLenght { get; set; } = 0;
         public string FileToken { get; set; } = String.Empty;
     }
+    */
 }

@@ -10,9 +10,16 @@
 #pragma warning disable 1573 // Disable "CS1573 Parameter '...' has no matching param tag in the XML comment for ...
 #pragma warning disable 1591 // Disable "CS1591 Missing XML comment for publicly visible type or member ..."
 
+using CloudProjectClient;
+using Newtonsoft.Json.Linq;
+using RESTAPI.ResponsesStructures;
+using System.Linq;
+using System.Collections.Generic;
+using System;
+using System.IO;
+
 namespace RESTAPI
 {
-    using System = global::System;
     
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.8.2.0 (NJsonSchema v10.2.1.0 (Newtonsoft.Json v11.0.0.0))")]
     public partial class CloudApi 
@@ -52,7 +59,13 @@ namespace RESTAPI
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public System.Threading.Tasks.Task<LoadCloudStructure> LoadStructureAsync()
         {
-            return StructureAsync(System.Threading.CancellationToken.None);
+            return StructureAsync(System.Threading.CancellationToken.None).ContinueWith<LoadCloudStructure>(task =>
+            {
+                GlobalScope.rootFolder = task.Result.Structure;
+                GlobalScope.StructureTimestamp = task.Result.LastEdit;
+                GlobalScope.OnStructureLoaded();
+                return task.Result;
+            }).ContinueWith<LoadCloudStructure>(t => { GlobalScope.ReloadView(); return t.Result; }) ;
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -70,6 +83,7 @@ namespace RESTAPI
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                    request_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
     
@@ -252,7 +266,7 @@ namespace RESTAPI
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/cloud/rename_folder");
-    
+
             var client_ = _httpClient;
             var disposeClient_ = false;
             try
@@ -262,6 +276,7 @@ namespace RESTAPI
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
                     request_.Content = content_;
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
     
@@ -348,6 +363,7 @@ namespace RESTAPI
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
@@ -415,12 +431,18 @@ namespace RESTAPI
 
     public partial class CloudApi 
     {
-    
+
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public System.Threading.Tasks.Task<LoadCloudStructure> DeleteFolderAsync(DeleteFolderRequest body)
         {
-            return FolderAsync(body, System.Threading.CancellationToken.None);
+            return FolderAsync(body, System.Threading.CancellationToken.None).ContinueWith<LoadCloudStructure>(task =>
+            {
+                GlobalScope.rootFolder = task.Result.Structure;
+                GlobalScope.StructureTimestamp = task.Result.LastEdit;
+                GlobalScope.OnStructureLoaded();
+                return task.Result;
+            });
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -439,6 +461,7 @@ namespace RESTAPI
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
@@ -469,6 +492,7 @@ namespace RESTAPI
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
+                            Console.WriteLine(objectResponse_.Object.Structure.FolderEditTime);
                             return objectResponse_.Object;
                         }
                         else
@@ -507,7 +531,13 @@ namespace RESTAPI
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public System.Threading.Tasks.Task<LoadCloudStructure> DeleteFileAsync(DeleteFileRequest body)
         {
-            return FileAsync(body, System.Threading.CancellationToken.None);
+            return FileAsync(body, System.Threading.CancellationToken.None).ContinueWith<LoadCloudStructure>(task =>
+            {
+                GlobalScope.rootFolder = task.Result.Structure;
+                GlobalScope.StructureTimestamp = task.Result.LastEdit;
+                GlobalScope.OnStructureLoaded();
+                return task.Result;
+            });
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -526,6 +556,7 @@ namespace RESTAPI
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
@@ -598,7 +629,13 @@ namespace RESTAPI
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public System.Threading.Tasks.Task<LoadCloudStructure> CreateFolderAsync(CreateFolderRequest body)
         {
-            return FolderAsync(body, System.Threading.CancellationToken.None);
+            return FolderAsync(body, System.Threading.CancellationToken.None).ContinueWith<LoadCloudStructure>(task =>
+            {
+                GlobalScope.rootFolder = task.Result.Structure;
+                GlobalScope.StructureTimestamp = task.Result.LastEdit;
+                GlobalScope.OnStructureLoaded();
+                return task.Result;
+            });
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -617,7 +654,9 @@ namespace RESTAPI
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Content = content_;
+                    Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
     
@@ -685,7 +724,13 @@ namespace RESTAPI
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public System.Threading.Tasks.Task<LoadCloudStructure> UploadFileAsync(string folderPath, string fileName, FileParameter file)
         {
-            return FileAsync(folderPath, fileName, file, System.Threading.CancellationToken.None);
+            return FileAsync(folderPath, fileName, file, System.Threading.CancellationToken.None).ContinueWith<LoadCloudStructure>(
+                task => {
+                    GlobalScope.rootFolder = task.Result.Structure;
+                    GlobalScope.StructureTimestamp = task.Result.LastEdit;
+                    GlobalScope.OnStructureLoaded();
+                    return task.Result;
+                });
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -704,6 +749,7 @@ namespace RESTAPI
                 {
                     var boundary_ = System.Guid.NewGuid().ToString();
                     var content_ = new System.Net.Http.MultipartFormDataContent(boundary_);
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     content_.Headers.Remove("Content-Type");
                     content_.Headers.TryAddWithoutValidation("Content-Type", "multipart/form-data; boundary=" + boundary_);
                     if (folderPath == null)
@@ -797,15 +843,15 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task DonwloadFileAsync(DownloadFileRequest body)
+        public System.Threading.Tasks.Task DonwloadFileAsync(DownloadFileRequest body, string downloadPath)
         {
-            return FileAsync(body, System.Threading.CancellationToken.None);
+            return FileAsync(body, downloadPath, System.Threading.CancellationToken.None);
         }
     
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task FileAsync(DownloadFileRequest body, System.Threading.CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task FileAsync(DownloadFileRequest body, string downloadPath, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/cloud/download_file");
@@ -818,6 +864,7 @@ namespace RESTAPI
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
     
@@ -842,7 +889,14 @@ namespace RESTAPI
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+
+
+                            var fileStream = new FileStream(downloadPath, FileMode.Create, FileAccess.Write);
+
+                            response_.Content.CopyToAsync(fileStream).Wait();
+
+                            fileStream.Flush();
+                            fileStream.Close();
                         }
                         else
                         if (status_ == 401)
@@ -955,7 +1009,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task LoginAsync(LoginRequest body)
+        public System.Threading.Tasks.Task<LoginResponce> LoginAsync(LoginRequest body)
         {
             return LoginAsync(body, System.Threading.CancellationToken.None);
         }
@@ -963,7 +1017,7 @@ namespace RESTAPI
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task<LoginResponce> LoginAsync(LoginRequest body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/login");
@@ -994,18 +1048,31 @@ namespace RESTAPI
                             foreach (var item_ in response_.Content.Headers)
                                 headers_[item_.Key] = item_.Value;
                         }
-    
+
+                       
+
                         ProcessResponse(client_, response_);
     
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            
+
+                            var objectResponse_ = await ReadObjectResponseAsync<LoginResponce>(response_, headers_).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            //var responce = JObject.Parse(objectResponse_.Object).ToObject<CreateAccountRequestSuccessResponse>();
+                            objectResponse_.Object.Status = true;
+
+                            return objectResponse_.Object;
                         }
                         else
                         {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false); 
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            return new LoginResponce { };
+                            //throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
                         }
                     }
                     finally
@@ -1028,7 +1095,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task CreateUserAsync(CreateAccountRequest body)
+        public System.Threading.Tasks.Task<CreateAccountRequestSuccessResponse> CreateUserAsync(CreateAccountRequest body)
         {
             return UserAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1036,7 +1103,7 @@ namespace RESTAPI
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task UserAsync(CreateAccountRequest body, System.Threading.CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task<CreateAccountRequestSuccessResponse> UserAsync(CreateAccountRequest body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/new_user");
@@ -1073,7 +1140,14 @@ namespace RESTAPI
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<CreateAccountRequestSuccessResponse>(response_, headers_).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            //var responce = JObject.Parse(objectResponse_.Object).ToObject<CreateAccountRequestSuccessResponse>();
+                            objectResponse_.Object.Status = true;
+                            return objectResponse_.Object;
                         }
                         else
                         {
@@ -1101,7 +1175,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task DeviceLoginAsync(LoginByDeviceRequest body)
+        public System.Threading.Tasks.Task<LoginResponce> DeviceLoginAsync(LoginByDeviceRequest body)
         {
             return LoginAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1109,7 +1183,7 @@ namespace RESTAPI
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task LoginAsync(LoginByDeviceRequest body, System.Threading.CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task<LoginResponce> LoginAsync(LoginByDeviceRequest body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/device_login");
@@ -1146,12 +1220,21 @@ namespace RESTAPI
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<LoginResponce>(response_, headers_).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            //var responce = JObject.Parse(objectResponse_.Object).ToObject<CreateAccountRequestSuccessResponse>();
+                            objectResponse_.Object.Status = true;
+
+                            return objectResponse_.Object;
                         }
                         else
                         {
-                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false); 
-                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                            return new LoginResponce { Status = false };
+                            //var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false); 
+                            //throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
                         }
                     }
                     finally
@@ -1174,7 +1257,7 @@ namespace RESTAPI
     
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public System.Threading.Tasks.Task AddTrustedDeviceAsync(TrustDeviceRequest body)
+        public System.Threading.Tasks.Task<TrustDeviceSuccessResponce> AddTrustedDeviceAsync(TrustDeviceRequest body)
         {
             return DeviceAsync(body, System.Threading.CancellationToken.None);
         }
@@ -1182,7 +1265,7 @@ namespace RESTAPI
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public async System.Threading.Tasks.Task DeviceAsync(TrustDeviceRequest body, System.Threading.CancellationToken cancellationToken)
+        public async System.Threading.Tasks.Task<TrustDeviceSuccessResponce> DeviceAsync(TrustDeviceRequest body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/trust_device");
@@ -1194,6 +1277,9 @@ namespace RESTAPI
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     var content_ = new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(body, _settings.Value));
+
+                    content_.Headers.Add("SessionToken", GlobalScope.Getbase64UserToken());
+
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
@@ -1219,7 +1305,14 @@ namespace RESTAPI
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<TrustDeviceSuccessResponce>(response_, headers_).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            //var responce = JObject.Parse(objectResponse_.Object).ToObject<TrustDeviceSuccessResponce>();
+                            objectResponse_.Object.Status = true;
+                            return objectResponse_.Object;
                         }
                         else
                         if (status_ == 401)
@@ -1366,13 +1459,13 @@ namespace RESTAPI
         public string FolderName { get; set; }
     
         [Newtonsoft.Json.JsonProperty("folderEditTime", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.DateTimeOffset FolderEditTime { get; set; }
+        public System.DateTime FolderEditTime { get; set; }
     
         [Newtonsoft.Json.JsonProperty("folders", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<FileSystemStructureFolder> Folders { get; set; }
+        public List<FileSystemStructureFolder> Folders { get; set; }
     
         [Newtonsoft.Json.JsonProperty("files", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<FileSystemStructureFile> Files { get; set; }
+        public List<FileSystemStructureFile> Files { get; set; }
     
     
     }
@@ -1380,11 +1473,13 @@ namespace RESTAPI
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.2.1.0 (Newtonsoft.Json v11.0.0.0)")]
     public partial class LoadCloudStructure 
     {
+        public bool Status { get; set; } = false;
+
         [Newtonsoft.Json.JsonProperty("structure", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public FileSystemStructureFolder Structure { get; set; }
     
         [Newtonsoft.Json.JsonProperty("lastEdit", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.DateTimeOffset LastEdit { get; set; }
+        public System.DateTime LastEdit { get; set; }
     
     
     }
@@ -1525,6 +1620,6 @@ namespace RESTAPI
 
 #pragma warning restore 1591
 #pragma warning restore 1573
-#pragma warning restore  472
-#pragma warning restore  114
-#pragma warning restore  108
+#pragma warning restore 472
+#pragma warning restore 114
+#pragma warning restore 108

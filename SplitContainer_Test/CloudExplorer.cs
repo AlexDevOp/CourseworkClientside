@@ -9,8 +9,9 @@ using System.Windows.Forms;
 using System.IO;
 using System.Collections;
 using System.Security.AccessControl;
+using RESTAPI;
 
-namespace SplitContainer_Test
+namespace CloudProjectClient
 {
     public enum FileActions
     {
@@ -18,6 +19,13 @@ namespace SplitContainer_Test
         Delete,
         Synchronize,
         OpenInExplorer,
+    }
+
+    public enum CloudContext
+    {
+        Folder,
+        File,
+        None
     }
 
 
@@ -33,31 +41,72 @@ namespace SplitContainer_Test
         //сортировальщик
         ListViewColumnSorter listViewColumnSorter;
 
+        private ContextMenuStrip WindowsExplorerMenu;
+        private ContextMenuStrip CloudExplorerMenu;
+
         public CloudExplorer()
         {
             InitializeComponent();
+            GlobalScope.ApiController.LoadStructureAsync();
 
             // добавляем элементы в меню
-            ContextMenuStrip contextMenu = new ContextMenuStrip();
+            WindowsExplorerMenu = new ContextMenuStrip();
             ToolStripMenuItem openMenuItem = new ToolStripMenuItem("Открыть");
             openMenuItem.Tag = true;
 
             ToolStripMenuItem openInExplorerMenuItem = new ToolStripMenuItem("Открыть в проводнике");
             openInExplorerMenuItem.Tag = true;
 
-            ToolStripMenuItem synMenuItem = new ToolStripMenuItem("Синхронизировать");
-            synMenuItem.Tag = false;
-
-            contextMenu.Items.AddRange(new[] { openMenuItem, openInExplorerMenuItem, synMenuItem });
+            WindowsExplorerMenu.Items.AddRange(new[] { openMenuItem, openInExplorerMenuItem});
 
             // ассоциируем контекстное меню с панелью
-            FolderItemsView.ContextMenuStrip = contextMenu;
+            FolderItemsView.ContextMenuStrip = WindowsExplorerMenu;
 
-            contextMenu.Opening += ContextMenu_Opening;
+            WindowsExplorerMenu.Opening += ContextMenu_Opening;
             // устанавливаем обработчики событий для контекстного меню
             openMenuItem.Click += openContextMenuItem_Click;
             openInExplorerMenuItem.Click += openInExplorerContextMenuItem_Click;
-            synMenuItem.Click += synContextMenuItem_Click;
+
+
+            CloudExplorerMenu = new ContextMenuStrip();
+            ToolStripMenuItem OpenCloudFolder = new ToolStripMenuItem("Открыть");
+            OpenCloudFolder.Tag = CloudContext.Folder;
+            OpenCloudFolder.Click += OpenCloudFolder_Click;
+
+            ToolStripMenuItem DeleteCloudFolder = new ToolStripMenuItem("Удалить папку");
+            DeleteCloudFolder.Tag = CloudContext.Folder;
+            DeleteCloudFolder.Click += DeleteCloudFolder_Click;
+
+            ToolStripMenuItem RenameCloudFolder = new ToolStripMenuItem("Переименовать папку");
+            RenameCloudFolder.Tag = CloudContext.Folder;
+            RenameCloudFolder.Click += RenameCloudFolder_Click;
+
+            //ToolStripMenuItem DownloadCloudFolder = new ToolStripMenuItem("Скачать папку");
+
+            ToolStripMenuItem CreateCloudFolder = new ToolStripMenuItem("Создать папку");
+            CreateCloudFolder.Tag = CloudContext.None;
+            CreateCloudFolder.Click += CreateCloudFolder_Click;
+
+            ToolStripMenuItem UploadCloudFile = new ToolStripMenuItem("Загрузить в облако файл");
+            UploadCloudFile.Tag = CloudContext.None;
+            UploadCloudFile.Click += UploadCloudFile_Click;
+
+            ToolStripMenuItem OpenCloudFile = new ToolStripMenuItem("Открыть файл");
+            OpenCloudFile.Tag = CloudContext.File;
+            OpenCloudFile.Click += OpenCloudFile_Click;
+
+            ToolStripMenuItem DeleteCloudFile = new ToolStripMenuItem("Удалить файл");
+            DeleteCloudFile.Tag = CloudContext.File;
+            DeleteCloudFile.Click += DeleteCloudFile_Click;
+
+            ToolStripMenuItem RenameCloudFile = new ToolStripMenuItem("Переименовать файл");
+            RenameCloudFile.Tag = CloudContext.File;
+            RenameCloudFile.Click += RenameCloudFile_Click;
+
+            CloudExplorerMenu.Items.AddRange(new[] { OpenCloudFolder, CreateCloudFolder, DeleteCloudFolder, RenameCloudFolder, UploadCloudFile, OpenCloudFile, DeleteCloudFile, RenameCloudFile });
+
+            CloudExplorerMenu.Opening += CloudExplorerMenu_Opening;
+
 
             //добавления колонок
             FolderItemsView.ColumnClick += new ColumnClickEventHandler(ClickOnColumn);
@@ -76,11 +125,15 @@ namespace SplitContainer_Test
                     tn.Name = s;
                     tn.Text = "Локальный диск " + s;
                     treeView1.Nodes.Add(tn.Name, tn.Text, 2);
-                    FileInfo f = new FileInfo(@s);
+
                     string t = "";
                     string[] str2 = Directory.GetDirectories(@s);
                     foreach (string s2 in str2)
                     {
+                        DirectoryInfo d = new DirectoryInfo(@s2);
+                        if (d.Attributes.HasFlag(FileAttributes.Hidden))
+                            continue;
+
                         t = s2.Substring(s2.LastIndexOf('\\')+1);
                         ((TreeNode)treeView1.Nodes[n - 1]).Nodes.Add(s2, t, 0);
                     }
@@ -97,6 +150,205 @@ namespace SplitContainer_Test
                         tn.SelectedImageIndex = 2;
                 }
             }
+
+            treeView1.Nodes.Add(@"Cloud:\", "Облако", 0);
+        }
+
+        internal void ReloadTreeView()
+        {
+            if (IsCloudOpened() && GlobalScope.rootFolder != null)
+            {
+                FolderItemsView.Items.Clear();
+                Adresses.Clear();
+                currIndex = 0;
+
+                currListViewAdress = @"Cloud:\";
+                toolStripTextBox1.Text = currListViewAdress;
+                FillCloudFolderView(GlobalScope.rootFolder);
+            }
+        }
+
+        private void UploadCloudFile_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            { 
+                if (openFileDialog.ShowDialog() != DialogResult.Cancel)
+                {
+                    GlobalScope.ApiController.UploadFileAsync(currListViewAdress.Replace(@"Cloud:", ""), openFileDialog.SafeFileName, new FileParameter(openFileDialog.OpenFile()) );
+                }
+            }
+        }
+
+        private void CreateCloudFolder_Click(object sender, EventArgs e)
+        {
+            using (var form = new EnterNameForm())
+            {
+                DialogResult result = form.ShowDialog();
+                if (result == DialogResult.OK)
+                {
+                    IsCloudFolderExists(currListViewAdress+ $@"\{form.folderNameTextBox.Text}");
+                    GlobalScope.ApiController.CreateFolderAsync(new CreateFolderRequest { NewFolderName= form.folderNameTextBox.Text, NewFolderPath = currListViewAdress.Replace(@"Cloud:", "") });
+                }
+            }
+        }
+
+        private bool IsCloudFolderExists(string cloudPath)
+        {
+            return FileSystemStructureWorker.GetFolderByPath(cloudPath) != null;
+        }
+
+        private void RenameCloudFile_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void DeleteCloudFile_Click(object sender, EventArgs e)
+        {
+            if (FolderItemsView.SelectedItems.Count != 1)
+                return;
+
+            FileSystemStructureFile file = (FileSystemStructureFile)FolderItemsView.SelectedItems[0].Tag;
+
+            if (MessageBox.Show("Вы уверены?", "Подтверждение", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                string path = currListViewAdress.Replace(@"Cloud:\", "");
+
+                GlobalScope.ApiController.DeleteFileAsync(new DeleteFileRequest { FolderPath= path, FileName= file.FileName} );
+            }
+        }
+
+        private void OpenCloudFile_Click(object sender, EventArgs e)
+        {
+            if (FolderItemsView.SelectedItems.Count != 1)
+                return;
+
+            FileSystemStructureFile file = (FileSystemStructureFile)FolderItemsView.SelectedItems[0].Tag;
+
+            using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.FileName = file.FileName; // Default file name
+                saveFileDialog.Filter = "All files(*.*)";
+                if (saveFileDialog.ShowDialog() != DialogResult.Cancel)
+                {
+                    GlobalScope.ApiController.DonwloadFileAsync(new DownloadFileRequest { FolderPath = currListViewAdress.Replace(@"Cloud:", ""), FileToken = file.FileToken }, saveFileDialog.FileName);
+                }
+            }
+
+
+
+        }
+
+        private void RenameCloudFolder_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void DeleteCloudFolder_Click(object sender, EventArgs e)
+        {
+            if (FolderItemsView.SelectedItems.Count != 1)
+                return;
+
+            FileSystemStructureFolder folder = (FileSystemStructureFolder)FolderItemsView.SelectedItems[0].Tag;
+
+            if (MessageBox.Show("Вы уверены?", "Подтверждение", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            {
+                string path = currListViewAdress + $@"\{folder.FolderName}";
+                path = path.Replace(@"Cloud:\", "");
+
+
+                GlobalScope.ApiController.DeleteFolderAsync(new DeleteFolderRequest {FolderPath= path });
+            }
+        }
+
+        private void OpenCloudFolder_Click(object sender, EventArgs e)
+        {
+            if (FolderItemsView.SelectedItems.Count == 1)
+            {
+                OpenCloudFolder((FileSystemStructureFolder)FolderItemsView.SelectedItems[0].Tag);
+            }
+        }
+
+        private void CloudExplorerMenu_Opening(object sender, CancelEventArgs e)
+        {
+            if (GlobalScope.rootFolder == null)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            if (FolderItemsView.SelectedItems.Count == 0)
+            {
+                foreach (ToolStripMenuItem context in CloudExplorerMenu.Items)
+                {
+                    switch ((CloudContext)context.Tag)
+                    {
+                        case CloudContext.Folder:
+                            context.Visible = false;
+                            break;
+                        case CloudContext.File:
+                            context.Visible = false;
+                            break;
+                        case CloudContext.None:
+                            context.Visible = true;
+                            break;
+                    }
+                }
+            }
+            else if (FolderItemsView.SelectedItems.Count == 1)
+            {
+                var item = FolderItemsView.SelectedItems[0].Tag;
+                if (item.GetType() == typeof (FileSystemStructureFile))
+                {
+                    foreach (ToolStripMenuItem context in CloudExplorerMenu.Items)
+                    {
+                        switch((CloudContext)context.Tag)
+                        {
+                           case CloudContext.Folder:
+                                context.Visible = false;
+                                break;
+                           case CloudContext.File:
+                                context.Visible = true;
+                                break;
+                           case CloudContext.None:
+                                context.Visible = false;
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (ToolStripMenuItem context in CloudExplorerMenu.Items)
+                    {
+                        switch ((CloudContext)context.Tag)
+                        {
+                            case CloudContext.Folder:
+                                context.Visible = true;
+                                break;
+                            case CloudContext.File:
+                                context.Visible = false;
+                                break;
+                            case CloudContext.None:
+                                context.Visible = false;
+                                break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                e.Cancel = true;
+            }
+        }
+
+        public void FillCloudTreeView()
+        {
+            treeView1.Nodes[treeView1.Nodes.Count - 1].Collapse();
+            treeView1.Nodes[treeView1.Nodes.Count - 1].Nodes.Clear();
+
+            foreach (var folder in GlobalScope.rootFolder.Folders)
+            {
+                ((TreeNode)treeView1.Nodes[treeView1.Nodes.Count-1]).Nodes.Add(@"Cloud:\"+folder.FolderName, folder.FolderName, 0);
+            }
         }
 
         private void ContextMenu_Opening(object sender, CancelEventArgs e)
@@ -107,6 +359,7 @@ namespace SplitContainer_Test
 
         private void FillFolderView(string path)
         {
+            FolderItemsView.ContextMenuStrip = WindowsExplorerMenu;
             string[] allPaths = Directory.GetDirectories(path);
             ListViewItem lw;
             foreach (string localPath in allPaths)
@@ -114,10 +367,10 @@ namespace SplitContainer_Test
                 DirectoryInfo d = new DirectoryInfo(@localPath);
                 if (d.Attributes.HasFlag(FileAttributes.Hidden))
                     continue;
-
-                lw = new ListViewItem(new string[] { localPath.Substring(localPath.LastIndexOf('\\') + 1), "Папка", "", d.LastWriteTime.ToString() }, 0);
+                var name = localPath.Substring(localPath.LastIndexOf('\\') + 1);
+                lw = new ListViewItem(new string[] { name, "Папка", "", d.LastWriteTime.ToString() }, 0);
                 lw.Name = localPath;
-                lw.Tag = false;
+                lw.Tag = new WindowsFolderTag { Name = name, LastEditTime = d.LastWriteTime };
                 FolderItemsView.Items.Add(lw);
             }
 
@@ -127,33 +380,38 @@ namespace SplitContainer_Test
                 FileInfo f = new FileInfo(@localPath);
                 if (f.Attributes.HasFlag(FileAttributes.Hidden))
                     continue;
-
-                lw = new ListViewItem(new string[] { localPath.Substring(localPath.LastIndexOf('\\') + 1), "Файл", GetFileLenghtString(f.Length), f.LastWriteTime.ToString() }, 1);
+                var name = localPath.Substring(localPath.LastIndexOf('\\') + 1);
+                var lenght = f.Length;
+                lw = new ListViewItem(new string[] { name, "Файл", GetFileLenghtString(lenght), f.LastWriteTime.ToString() }, 1);
                 lw.Name = localPath;
-                lw.Tag = true;
+                lw.Tag = new WindowsFileTag { Name = name , Length = lenght, LastEditTime = f.LastWriteTime };
                 FolderItemsView.Items.Add(lw);
             }
         }
 
 
-        private void FillCloudFolderView(FileSystemStructureFolder path)
+        public void FillCloudFolderView(FileSystemStructureFolder path)
         {
+            FolderItemsView.ContextMenuStrip = CloudExplorerMenu;
+            if (path == null)
+                return;
+
             FileSystemStructureFolder folder = path;
             ListViewItem lw;
             foreach(FileSystemStructureFolder f in folder.Folders)
             {
                 lw = new ListViewItem(new string[] { f.FolderName.Substring(f.FolderName.LastIndexOf('\\') + 1), "Папка", "", f.FolderEditTime.ToString() }, 0);
                 lw.Name = f.FolderName;
-                lw.Tag = false;
+                lw.Tag = f;
                 FolderItemsView.Items.Add(lw);
             }
 
 
-            foreach (FileSystemStructureFile localPath in folder.Files)
+            foreach (FileSystemStructureFile f in folder.Files)
             {
-                lw = new ListViewItem(new string[] { localPath.FileName.Substring(localPath.FileName.LastIndexOf('\\') + 1), "Файл", GetFileLenghtString(localPath.FileLenght), localPath.FileEditTime.ToString() }, 1);
-                lw.Name = localPath.FileName;
-                lw.Tag = true;
+                lw = new ListViewItem(new string[] { f.FileName.Substring(f.FileName.LastIndexOf('\\') + 1), "Файл", GetFileLenghtString(f.FileLenght), f.FileEditTime.ToString() }, 1);
+                lw.Name = f.FileName;
+                lw.Tag = f;
                 FolderItemsView.Items.Add(lw);
             }
         }
@@ -212,39 +470,78 @@ namespace SplitContainer_Test
             currListViewAdress = e.Node.Name;
             toolStripTextBox1.Text = currListViewAdress;
             //заполнение ListView
-            try
-            {
-                FillCloudFolderView(FileSystemStructureWorker.CreateTestRootFolder());
-            }
-            catch { }
 
+            if (currListViewAdress.Contains(@"Cloud:\") && GlobalScope.rootFolder != null)
+                FillCloudFolderView(FileSystemStructureWorker.GetFolderByPath(currListViewAdress.Replace(@"Cloud:\","")));
+            else
+                FillFolderView(currListViewAdress);
+        }
+
+        private bool IsCloudOpened()
+        {
+            return currListViewAdress.Contains(@"Cloud:\");
+        }
+
+        private void OpenCloudFolder(FileSystemStructureFolder folder)
+        {
+            FolderItemsView.Items.Clear();
+            currListViewAdress += @"\" + folder.FolderName;
+            currListViewAdress = currListViewAdress.Replace(@"\\", @"\");
+            toolStripTextBox1.Text = currListViewAdress;
+            Adresses.Add(currListViewAdress);
+            currIndex++;
+            FillCloudFolderView(FileSystemStructureWorker.GetFolderByPath(currListViewAdress.Replace(@"Cloud:\", "")));
         }
 
         private void listView1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-
-            //обработка двойного нажатия по папке или файлу в ListView
-            if ((bool)FolderItemsView.SelectedItems[0].Tag)
+            if (IsCloudOpened())
             {
-                try
+                if (FolderItemsView.SelectedItems[0].Tag.GetType() == typeof(FileSystemStructureFolder))
                 {
-                    //обработка нажатия на файл(его запуска)
-                    System.Diagnostics.Process MyProc = new System.Diagnostics.Process();
-                    MyProc.StartInfo.FileName = FolderItemsView.SelectedItems[0].Name;
-                    MyProc.Start();
+                    OpenCloudFolder((FileSystemStructureFolder)FolderItemsView.SelectedItems[0].Tag);
                 }
-                catch (Exception ex)
+                else if (FolderItemsView.SelectedItems[0].Tag.GetType() == typeof(FileSystemStructureFile))
                 {
-                    MessageBox.Show($"Произошла ошибка: {ex.Message}");
+                    FileSystemStructureFile file = (FileSystemStructureFile)FolderItemsView.SelectedItems[0].Tag;
+
+                    using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+                    {
+                        saveFileDialog.FileName = file.FileName; // Default file name
+                        saveFileDialog.Filter = "All files(*.*)|*.*";
+                        if (saveFileDialog.ShowDialog() != DialogResult.Cancel)
+                        {
+                            GlobalScope.ApiController.DonwloadFileAsync(new DownloadFileRequest { FolderPath = currListViewAdress.Replace(@"Cloud:", ""), FileToken = file.FileToken }, saveFileDialog.FileName);
+                        }
+                    }
                 }
             }
-
             else
             {
-                OpenFolder(FolderItemsView.SelectedItems[0].Name);
+                //обработка двойного нажатия по папке или файлу в ListView
+                if (FolderItemsView.SelectedItems[0].Tag.GetType() == typeof(WindowsFileTag))
+                {
+                    try
+                    {
+                        //обработка нажатия на файл(его запуска)
+                        System.Diagnostics.Process MyProc = new System.Diagnostics.Process();
+                        MyProc.StartInfo.FileName = FolderItemsView.SelectedItems[0].Name;
+                        MyProc.Start();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Произошла ошибка: {ex.Message}");
+                    }
+                }
+
+                else
+                {
+                    OpenFolder(FolderItemsView.SelectedItems[0].Name);
+                }
             }
             
         }
+
         private void ClickOnColumn(object sender, ColumnClickEventArgs e)
         {
             if (e.Column == listViewColumnSorter.SortColumn)
@@ -283,14 +580,30 @@ namespace SplitContainer_Test
             {
                 foreach (TreeNode tn in e.Node.Nodes)
                 {
-                    string[] str2 = Directory.GetDirectories(@tn.Name);
-                    foreach (string str in str2)
+                    if (@tn.Name.Contains(@"Cloud:\"))
                     {
-                        TreeNode temp = new TreeNode();
-                        temp.Name = str;
-                        temp.Text = str.Substring(str.LastIndexOf('\\') + 1);
-                        e.Node.Nodes[i].Nodes.Add(temp);
+                        foreach (var folder in FileSystemStructureWorker.GetFolderByPath(@tn.Name.Replace(@"Cloud:\", "")).Folders)
+                        {
+                            TreeNode temp = new TreeNode();
+                            temp.Text = folder.FolderName;
+                            temp.Name = e.Node.Nodes[i].Name + @"\" + folder.FolderName;
+                            e.Node.Nodes[i].Nodes.Add(temp);
+                        }
                     }
+                    else
+                    {
+                        string[] str2 = Directory.GetDirectories(@tn.Name);
+                        foreach (string str in str2)
+                        {
+                            TreeNode temp = new TreeNode();
+                            temp.Name = str;
+                            temp.Text = str.Substring(str.LastIndexOf('\\') + 1);
+                            e.Node.Nodes[i].Nodes.Add(temp);
+                        }
+                    }
+
+
+
                     i++;
                 }
             }
@@ -317,7 +630,10 @@ namespace SplitContainer_Test
 
                 try
                 {
-                    FillFolderView(currListViewAdress);
+                    if (currListViewAdress.Contains(@"Cloud:\"))
+                        FillCloudFolderView(FileSystemStructureWorker.GetFolderByPath(currListViewAdress.Replace(@"Cloud:\", "")));
+                    else
+                        FillFolderView(currListViewAdress);
                 }
                 catch (Exception ex)
                 {
@@ -346,7 +662,10 @@ namespace SplitContainer_Test
 
                 try
                 {
-                    FillFolderView(currListViewAdress);
+                    if (currListViewAdress.Contains(@"Cloud:\"))
+                        FillCloudFolderView(FileSystemStructureWorker.GetFolderByPath(currListViewAdress.Replace(@"Cloud:\", "")));
+                    else
+                        FillFolderView(currListViewAdress);
                 }
                 catch (Exception ex)
                 {
@@ -486,53 +805,6 @@ namespace SplitContainer_Test
             }
         }
 
-        private void synContextMenuItem_Click(object sender, EventArgs e)
-        {
-            List<FileInfo> fileInfos = new List<FileInfo>();
-            Boolean HasLargeFiles = false;
-
-            foreach (ListViewItem selectedItem in FolderItemsView.SelectedItems)
-            {
-                if ((bool)selectedItem.Tag)
-                {
-                    FileInfo f = new FileInfo(@selectedItem.Name);
-                    if (f.Length / 1024 / 1024 > 10)
-                    {
-                        HasLargeFiles = true;
-                        continue;
-                    }
-
-                    fileInfos.Add(f);
-                }
-                else
-                {
-                    RecursivelyFilesAdding(fileInfos, selectedItem.Name, HasLargeFiles);
-                }
-
-                if (fileInfos.Count > 50)
-                {
-                    MessageBox.Show("Ограничения демонстрационной версии не позволяют синхронизировать больше 50 файлов");
-                    return;
-                }
-            }
-
-            if (HasLargeFiles)
-            {
-                MessageBox.Show("Ограничения демонстрационной версии не позволяют файлы размером больше 10 МБ\n" +
-                    "Эти файлы будут пропущены");
-            }
-
-            if (fileInfos.Count == 0)
-            {
-                MessageBox.Show("Нет файлов для синхронизации");
-                return;
-            }
-
-            Console.WriteLine(fileInfos.Count);
-
-        }
-
-
         private void openInExplorerContextMenuItem_Click(object sender, EventArgs e)
         {
             if ((bool)FolderItemsView.SelectedItems[0].Tag)
@@ -580,7 +852,41 @@ namespace SplitContainer_Test
         private void refreshButton_Click(object sender, EventArgs e)
         {
             FolderItemsView.Items.Clear();
-            FillFolderView(currListViewAdress);
+            Adresses.Clear();
+            currIndex = 0;
+            treeView1.Nodes[treeView1.Nodes.Count - 1].Collapse();
+
+            if (currListViewAdress.Contains(@"Cloud:\"))
+            {
+                treeView1.Nodes[treeView1.Nodes.Count - 1].Nodes.Clear();
+
+                GlobalScope.ApiController.LoadStructureAsync();
+            }
+            else
+                FillFolderView(currListViewAdress);
+
         }
+
+        private void выйтиToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GlobalScope.Settings.DeviceAuth = new DeviceAuthSettings();
+            this.Close();
+        }
+    }
+
+    public class WindowsFolderTag
+    {
+        public string Name { get; set; }
+
+        public DateTime LastEditTime { get; set; }
+    }
+
+    public class WindowsFileTag
+    {
+        public string Name { get; set; }
+
+        public DateTime LastEditTime { get; set; }
+
+        public long Length { get; set; }
     }
 }
