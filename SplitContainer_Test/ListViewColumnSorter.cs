@@ -253,20 +253,34 @@ public class ListViewColumnSorter : IComparer
 
     public int Compare(ListViewItem x, ListViewItem y)
     {
-        int compareResult;
-        ListViewItem listviewX, listviewY;
+        object DataTransferX = x.Tag;
+        object DataTransferY = y.Tag;
 
-        // Cast the objects to be compared to ListViewItem objects
-        listviewX = (ListViewItem)x;
-        listviewY = (ListViewItem)y;
+        if (x.GetType() == typeof(FileSystemStructureFolder) && y.GetType() == typeof(FileSystemStructureFolder))
+            return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFolder)DataTransferY);
 
-        return Compare(listviewX.Tag, listviewY.Tag);
+        if (x.GetType() == typeof(FileSystemStructureFile) && y.GetType() == typeof(FileSystemStructureFile))
+            return Compare((FileSystemStructureFile)DataTransferX, (FileSystemStructureFile)DataTransferY);
+
+        if (x.GetType() == typeof(FileSystemStructureFolder) && y.GetType() == typeof(FileSystemStructureFolder))
+            return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFile)DataTransferY);
+
+        if (x.GetType() == typeof(WindowsFolderTag) && y.GetType() == typeof(WindowsFolderTag))
+            return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFolder)DataTransferY);
+
+        if (x.GetType() == typeof(WindowsFolderTag) && y.GetType() == typeof(WindowsFileTag))
+            return Compare((WindowsFileTag)DataTransferX, (FileSystemStructureFile)DataTransferY);
+
+        if (x.GetType() == typeof(WindowsFileTag) && y.GetType() == typeof(WindowsFileTag))
+            return Compare((WindowsFileTag)DataTransferX, (WindowsFileTag)DataTransferY);
+
+        return 0;
     }
 
     public int Compare(object x, object y)
     {
-        if (x.GetType() == typeof (ListViewItem) && y.GetType() && typeof(ListViewItem))
-
+        if (x.GetType() == typeof(ListViewItem) && y.GetType() == typeof(ListViewItem))
+            return Compare((ListViewItem)x, (ListViewItem)y);
 
 
         return 0;
