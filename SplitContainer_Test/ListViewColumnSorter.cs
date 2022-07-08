@@ -256,22 +256,22 @@ public class ListViewColumnSorter : IComparer
         object DataTransferX = x.Tag;
         object DataTransferY = y.Tag;
 
-        if (x.GetType() == typeof(FileSystemStructureFolder) && y.GetType() == typeof(FileSystemStructureFolder))
+        if (DataTransferX.GetType() == typeof(FileSystemStructureFolder) && DataTransferY.GetType() == typeof(FileSystemStructureFolder))
             return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFolder)DataTransferY);
 
-        if (x.GetType() == typeof(FileSystemStructureFile) && y.GetType() == typeof(FileSystemStructureFile))
+        if (DataTransferX.GetType() == typeof(FileSystemStructureFile) && DataTransferY.GetType() == typeof(FileSystemStructureFile))
             return Compare((FileSystemStructureFile)DataTransferX, (FileSystemStructureFile)DataTransferY);
 
-        if (x.GetType() == typeof(FileSystemStructureFolder) && y.GetType() == typeof(FileSystemStructureFolder))
+        if (DataTransferX.GetType() == typeof(FileSystemStructureFolder) && DataTransferY.GetType() == typeof(FileSystemStructureFolder))
             return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFile)DataTransferY);
 
-        if (x.GetType() == typeof(WindowsFolderTag) && y.GetType() == typeof(WindowsFolderTag))
-            return Compare((FileSystemStructureFolder)DataTransferX, (FileSystemStructureFolder)DataTransferY);
+        if (DataTransferX.GetType() == typeof(WindowsFolderTag) && DataTransferY.GetType() == typeof(WindowsFolderTag))
+            return Compare((WindowsFolderTag)DataTransferX, (WindowsFolderTag)DataTransferY);
 
-        if (x.GetType() == typeof(WindowsFolderTag) && y.GetType() == typeof(WindowsFileTag))
-            return Compare((WindowsFileTag)DataTransferX, (FileSystemStructureFile)DataTransferY);
+        if (DataTransferX.GetType() == typeof(WindowsFolderTag) && DataTransferY.GetType() == typeof(WindowsFileTag))
+            return Compare((WindowsFolderTag)DataTransferX, (WindowsFileTag)DataTransferY);
 
-        if (x.GetType() == typeof(WindowsFileTag) && y.GetType() == typeof(WindowsFileTag))
+        if (DataTransferX.GetType() == typeof(WindowsFileTag) && DataTransferY.GetType() == typeof(WindowsFileTag))
             return Compare((WindowsFileTag)DataTransferX, (WindowsFileTag)DataTransferY);
 
         return 0;
